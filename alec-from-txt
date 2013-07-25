@@ -1,0 +1,29 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use feature qw( say );
+use open
+    'IO'   => ':utf8',
+    ':std' => ':utf8';
+
+say qq{Name,Avoid?,Support?};
+
+while (defined( my $name = <>)) {
+    my $have_cut_ties = ($name =~ m{Corporations Which Have Cut Ties to ALEC}ism);
+
+    # Get rid of stray double quotes, as we're being lazy and not using a
+    # CSV library
+    $name =~ s{"}{'}g;
+
+    # Clean up random cruft
+    $name =~ s{\[\d+\].*}{}ismg;
+    $name =~ s{[(].*}{}ism;
+    $name =~ s{:.*}{}ism;
+    $name =~ s{, ?(?!Inc).*}{}ism;
+    $name =~ s{See Corporations Which Have Cut Ties to ALEC.*}{}ism;
+
+    # Trim
+    $name =~ s{^\s+|\s+$}{}ismg;
+    
+    say join ",", qq{"$name"}, $have_cut_ties ? (q{},'Support') : ('Avoid',q{});
+}

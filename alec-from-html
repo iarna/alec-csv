@@ -1,0 +1,66 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use feature qw( say );
+use HTML::Entities;
+use open
+    'IO'   => ':utf8',
+    ':std' => ':utf8';
+
+
+my $content = do {local $/=undef; <>};
+
+# Throw away everything prior to the content we care about
+$content =~ s{.*<h2>.*?For-Profit Corporations.*?</h2>}{}ism;
+
+# Throw away everything after the content we care about
+$content =~ s{<h2>.*?Trade Groups.*?</h2>.*}{}ism;
+
+say qq{Name,Avoid?,Support?,Bold on Wiki};
+my $ul_depth = 0;
+while ( $content =~ m{<li>(.*)|(<ul>)|(</ul>)}img ) {
+    # This nonsense is to avoid reporting sub lists (see General Electric's entry)
+    if ( $2 ) {
+        $ul_depth ++;
+        next;
+    }
+    elsif ( $3 ) {
+        $ul_depth --;
+        next;
+    }
+    next if $ul_depth > 1;
+
+    my $name = $1;
+    my $bold;
+
+    my $have_cut_ties = ($name =~ m{Corporations Which Have Cut Ties to ALEC}ism);
+
+    # Match bolded company names at the start
+    if ($name =~ m{^\s*<b>(.*?)</b>}) {
+        $bold = 1;
+    }
+
+    # Strip any footnotes
+    $name =~ s{<sup.*}{}ism;
+
+    # Strip HTML tags
+    $name =~ s{<.*?>}{}g;
+
+    $name = decode_entities($name);
+
+    # Get rid of stray double quotes, as we're being lazy and not using a
+    # CSV library
+    $name =~ s{"}{'}g;
+
+    # Clean up random cruft
+    $name =~ s{[(].*}{}ism;
+    $name =~ s{:.*}{}ism;
+    $name =~ s{, ?(?!Inc).*}{}ism;
+    $name =~ s{See Corporations Which Have Cut Ties to ALEC.*}{}ism;
+    
+    # Trim
+    $name =~ s{^\s+|\s+$}{}ismg;
+
+    say join ",", qq{"$name"}, $have_cut_ties ? (q{},'Support') : ('Avoid',q{}), $bold ? 'Bolded' : q{};
+}
+

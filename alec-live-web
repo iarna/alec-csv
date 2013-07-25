@@ -1,0 +1,2 @@
+#!/bin/sh
+curl -s http://www.sourcewatch.org/index.php/ALEC_Corporations | ./alec-from-html
